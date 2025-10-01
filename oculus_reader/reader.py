@@ -200,11 +200,31 @@ class OculusReader:
 
 
 def main():
+    import rerun as rr
+    import json
+
+    rr.init("oculus_demo", spawn=True)
+    rr.log("headset", rr.Transform3D(translation=[0, 0, 0], mat3x3=np.eye(3), axis_length=0.1), static=True)
     oculus_reader = OculusReader()
 
-    while True:
-        time.sleep(0.3)
-        print(oculus_reader.get_transformations_and_buttons())
+    try:
+        while True:
+            time.sleep(0.1)
+            transforms, buttons = oculus_reader.get_transformations_and_buttons()
+            if transforms:
+                left_transform = transforms['l']
+                rr.log("left", rr.Transform3D(translation=left_transform[:3, 3], mat3x3=left_transform[:3, :3], axis_length=0.05))
+
+                right_transform = transforms['r']
+                rr.log("right", rr.Transform3D(translation=right_transform[:3, 3], mat3x3=right_transform[:3, :3], axis_length=0.05))
+
+            if buttons:
+                button_str = json.dumps(buttons, indent=2, default=str)
+                rr.log("buttons", rr.TextDocument(f"```\n{button_str}```"))
+
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+        oculus_reader.stop()
 
 
 if __name__ == '__main__':
